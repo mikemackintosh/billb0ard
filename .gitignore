@@ -1,0 +1,9 @@
+.vagrant/
+pibuilder_boot/
+pibuilder_root/
+ubuntu-embedded/
+history
+.DS_Store
+Makefile.sigsci.inc
+*.img
+*.log

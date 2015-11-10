@@ -1,0 +1,4 @@
+I: Running command: debootstrap --arch armhf --foreign --variant=minbase --include wget,curl,binutils wheezy /build/pkgs/rootfs-20151109 http://mirror.umd.edu/raspbian/raspbian
+mknod: '/build/pkgs/rootfs-20151109/test-dev-null': Operation not permitted
+mount: mount point /build/pkgs/rootfs-20151109/proc does not exist
+rm: cannot remove ‘/build/pkgs/rootfs-20151109/usr/bin/qemu-*’: No such file or directory
