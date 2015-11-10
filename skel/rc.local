@@ -14,14 +14,14 @@
 # Help path
 export PATH=/opt/vc/bin:$PATH
 export LD_LIBRARY_PATH=/opt/vc/lib
-modprobe 8192cu
-echo "0846 9043" > /sys/bus/usb/drivers/rtl8192cu/new_id
-ifdown wlan0
-ifup wlan0
+#sudo /smodprobe 8192cu
+#echo "0846 9043" > /sys/bus/usb/drivers/rtl8192cu/new_id
+#ifdown wlan0
+#ifup wlan0
 
 URL=$(cat /boot/dashboard.txt)
 
-ip addr eth0
+#ip addr eth0
 ip addr wlan0
 
 echo "Attempting to launch ${URL}..."
@@ -44,7 +44,7 @@ tvservice --explicit="$_GROUP $_MODE"
 sleep 1;
 
 printf "===> Resetting frame-buffer to %dx%dx%d...\n" $_XRES $_YRES $_DEPTH
-fbset -all --geometry $_XRES $_YRES $_XRES $_YRES $_DEPTH -left 0 -right 0 -upper 0 -lower 0;
+fbset --all --geometry $_XRES $_YRES $_XRES $_YRES $_DEPTH -left 0 -right 0 -upper 0 -lower 0;
 sleep 1;
 
 cp /boot/etc/* /etc

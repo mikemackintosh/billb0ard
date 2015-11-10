@@ -1,10 +1,24 @@
 #!/bin/bash
 set -e
 
-# Default Packages
-PACKAGES=${PACKAGES-"locales console-common fbset wireless-tools xinit consolekit net-tools fonts-freefont-ttf ifplugd ifupdown hostname fontconfig-config fontconfig iputils-ping wpasupplicant curl binutils locales sudo openssh-server ntp usbmount patch less rsync sudo raspi-config matchbox chromium x11-xserver-utils xwit sqlite3 libnss3 vim"}
+while [[ $# -ge 1 ]]; do
+  key="$1"
 
-IMAGESIZE=${IMAGESIZE-"1020"} # in Megabytes
+  case $key in
+      -v|--verbose)
+      VERBOSE=On
+      ;;
+      *)
+              # unknown option
+      ;;
+  esac
+  shift # past argument or value
+done
+
+# Default Packages
+PACKAGES=${PACKAGES-"module-init-tools locales console-common fbset wireless-tools xinit consolekit net-tools fonts-freefont-ttf ifplugd ifupdown hostname fontconfig-config fontconfig iputils-ping wpasupplicant curl binutils locales sudo openssh-server ntp usbmount patch less rsync sudo raspi-config matchbox chromium x11-xserver-utils xwit sqlite3 libnss3 vim"}
+
+IMAGESIZE=${IMAGESIZE-"996"} # in Megabytes
 USERNAME=${BILLBOARD_USERNAME-"bill"}
 PASSWORD=${BILLBOARD_PASSWORD-"b0ard"}
 DNS_SERVER=${DNS_SERVER-"8.8.8.8"}
@@ -14,6 +28,7 @@ PI_HOSTNAME=${PI_HOSTNAME-"dashboard${RANDOM:0:3}"}
 # cant be resolved publicly
 
 # Print some configurations
+echo "Verbosity:                            ${VERBOSE-Off}"
 echo "Dashboard Target:                     ${DASHBOARD}"
 echo "Device Username:                      ${BILLBOARD_USERNAME}"
 echo "Device Password:                      ${BILLBOARD_PASSWORD}"
@@ -46,6 +61,7 @@ OUTIMAGE=$absolute_path/dashboard.img
 
 # Output some ENV for rebuilding
 echo "Build Environment:"
+echo -e "==================\n\n"
 echo "export DNS_SERVER=\"${DNS_SERVER}\""
 echo "export DASHBOARD=\"${DASHBOARD}\""
 echo "export BILLBOARD_USERNAME=\"${BILLBOARD_USERNAME}\""
@@ -76,9 +92,13 @@ if [ ${EUID} -ne 0 ]; then
   exit 1
 fi
 
-# Catch errors and handle cleaning up the mess
-trap cleanup 0 1 2 3 9 15
-exec 2> ./errors.log
+# If verbose mode is disabled
+if [[ -z $VERBOSE ]]; then
+  # Catch errors and handle cleaning up the mess
+  trap cleanup 0 1 2 3 9 15
+  exec 2> ./errors.log
+fi
+
 
 # Log helper
 log() {
@@ -139,7 +159,7 @@ bootstrap() {
 manage_firmware() {
   # Get pi firmware
   log " - Downloading Firmware "
-  wget https://github.com/raspberrypi/firmware/archive/master.zip --append-output ./errors.log &
+: 'wget https://github.com/raspberrypi/firmware/archive/master.zip --append-output ./errors.log &
   while kill -0 ${!} 2>/dev/null; do
     echo -n "."
     sleep 1
@@ -154,7 +174,7 @@ manage_firmware() {
     sleep 1
   done
   echo " Done!"
-
+'
   log " - Copying Firmware "
   # Copy over the firmware
   cp -R firmware-master/boot/* $BOOTFS/
@@ -273,8 +293,13 @@ configure(){
   echo 'LC_ALL=C
 LANGUAGE=C
 LANG=C
-PATH=/opt/vc/bin:/opt/vc/sbin:$PATH
+PATH=/opt/vc/bin:/opt/vc/sbin:/sbin:$PATH
 ' > $ROOTFS/root/.bashrc
+echo 'LC_ALL=C
+LANGUAGE=C
+LANG=C
+PATH=/opt/vc/bin:/opt/vc/sbin:/sbin:$PATH
+' > $ROOTFS/home/$BILLBOARD_USERNAME/.bashrc
 
   echo "console-common	console-data/keymap/policy	select	Select keymap from full list
   console-common	console-data/keymap/full	select	us
@@ -313,7 +338,10 @@ link_in_boot = yes
 
   #chroot_cmd add-apt-repository -y universe
   chroot_cmd apt-get update
-  chroot_cmd apt-get dist-upgrade --force-yes -y
+  cp skel/update.sh $ROOTFS/update.sh
+  chmod +x $ROOTFS/update.sh
+  chroot_cmd /update.sh
+  rm $ROOTFS/update.sh
   chroot_cmd apt-get install -y --force-yes $PACKAGES
 
 
@@ -385,10 +413,10 @@ iface default inet dhcp
   # Set interfaces
   log " - Configuring rc.local"
   cp skel/rc.local $ROOTFS/etc/rc.local
-  sed -i -e "s/USERNAME/$USERNAME/g" $ROOTFS/etc/rc.local
+  sed -i -e "s/USERNAME/$BILLBOARD_USERNAME/g" $ROOTFS/etc/rc.local
 
   log " - Configuring rc.local"
-  sed -i -e "s/REPLACE_USERNAME/$USERNAME/g" $BOOTFS/xinitrc
+  sed -i -e "s/REPLACE_USERNAME/$BILLBOARD_USERNAME/g" $BOOTFS/xinitrc
 
   log " - Configuring X11"
   sed -i -e "s/allowed_users=console/allowed_users=anybody/g" $ROOTFS/etc/X11/Xwrapper.config

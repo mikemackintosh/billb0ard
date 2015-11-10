@@ -16,7 +16,7 @@ run:
 
 image:
 	#./make_img.sh -t -b raspi2 -d 15.10
-	./pibuilder.sh
+	./pibuilder.sh -v
 
 vm:
 	vagrant up --provider virtualbox
