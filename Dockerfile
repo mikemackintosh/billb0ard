@@ -19,10 +19,12 @@ RUN   apt-get install -y apt-cacher-ng
 RUN   apt-get install -y unzip
 #RUN   apt-get install -y vmdebootstrap
 
-RUN   mkdir         /build
-COPY  Makefile*     /build/
-COPY  pibuilder.sh  /build/
-COPY  firmware/     /build/firmware/
+RUN   mkdir             /build
+COPY  Makefile*         /build/
+COPY  pibuilder.sh      /build/
+COPY  firmware/         /build/firmware/
+COPY  skel/             /build/skel/
+COPY  firmware-master/  /build/firmware-master/
 
 RUN   chmod +x /build/pibuilder.sh
 
