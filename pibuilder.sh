@@ -107,12 +107,13 @@ log() {
 
 # Log errors with this
 error() {
-  echo "[!!] $@"
+  echo "ERROR: $@"
 }
 
 # Run commands wihtin the CHROOT
 chroot_cmd() {
-  PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS "$@"
+  #SHELL=/bin/sh SUDO_COMMAND=/bin/sh PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS "$@"
+  SHELL=/bin/sh SUDO_COMMAND=/bin/sh PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS "$@"
 }
 
 # Handle cleanup
@@ -413,13 +414,14 @@ iface default inet dhcp
   # Set interfaces
   log " - Configuring rc.local"
   cp skel/rc.local $ROOTFS/etc/rc.local
-  sed -i -e "s/USERNAME/$BILLBOARD_USERNAME/g" $ROOTFS/etc/rc.local
+  sed -i -e "s/REPLACE_USERNAME/$BILLBOARD_USERNAME/g" $ROOTFS/etc/rc.local
 
   log " - Configuring rc.local"
   sed -i -e "s/REPLACE_USERNAME/$BILLBOARD_USERNAME/g" $BOOTFS/xinitrc
 
   log " - Configuring X11"
   sed -i -e "s/allowed_users=console/allowed_users=anybody/g" $ROOTFS/etc/X11/Xwrapper.config
+  echo "needs_root_rights = yes" >>  $ROOTFS/etc/X11/Xwrapper.config
 
   # Set Serial
   log " - Configuring Serial"
@@ -451,6 +453,16 @@ snd_bcm2835
 
   sed -i -e 's/KERNEL\!=\"eth\*|/KERNEL\!=\"/' $ROOTFS/lib/udev/rules.d/75-persistent-net-generator.rules
   rm -f $ROOTFS/etc/udev/rules.d/70-persistent-net.rules
+
+
+  log " - Setup NSS"
+  chroot_cmd ln -s /usr/lib/arm-linux-gnueabihf/nss/ /usr/lib/nss
+
+
+  log " - Setting Dashboard Target"
+  echo $DASHBOARD > $ROOTFS/boot/dashboard.txt
+  echo $DASHBOARD > $BOOTFS/dashboard.txt
+
 
   # Set cleanup
   log " - Cleaning Up"

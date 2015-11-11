@@ -50,8 +50,8 @@ sleep 1;
 cp /boot/etc/* /etc
 
 if [ -f /boot/xinitrc ]; then
-ln -fs /boot/xinitrc /home/USERNAME/.xinitrc;
-su - USERNAME -c "startx" &
+ln -fs /boot/xinitrc /home/REPLACE_USERNAME/.xinitrc;
+su - REPLACE_USERNAME -c "startx" &
 fi
 
 exit 0
