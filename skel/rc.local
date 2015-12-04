@@ -22,7 +22,7 @@ export LD_LIBRARY_PATH=/opt/vc/lib
 URL=$(cat /boot/dashboard.txt)
 
 #ip addr eth0
-ip addr wlan0
+ifconfig -a
 
 echo "Attempting to launch ${URL}..."
 
