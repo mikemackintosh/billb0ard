@@ -1,5 +1,5 @@
 #!/bin/sh
-source /boot/dashboard.txt
+URL=$(cat /boot/dashboard.txt)
 
 while true; do
 
@@ -33,5 +33,5 @@ while true; do
 	matchbox-window-manager -use_titlebar no -use_cursor no &
 
 	# Start the browser (See http://peter.sh/experiments/chromium-command-line-switches/)
-	chromium  --app=$URL
+	chromium  --start-fullscreen --disable-async-dns --disable-cache --dns-prefetch-disable --force-app-mode --app=$URL
 done;

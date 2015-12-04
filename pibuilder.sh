@@ -381,7 +381,7 @@ link_in_boot = yes
   echo "127.0.0.1 ${PI_HOSTNAME}" >> $BOOTFS/etc/hosts
 
 
-  if [[ -z $HOSTOVERIDE ]]; then
+  if [[ ! -z $HOSTOVERIDE ]]; then
     log " - Configuring Hostname Override"
     echo "${HOSTOVERIDE}" >> $ROOTFS/etc/hosts
     echo "${HOSTOVERIDE}" >> $BOOTFS/etc/hosts
