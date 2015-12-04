@@ -47,11 +47,14 @@ printf "===> Resetting frame-buffer to %dx%dx%d...\n" $_XRES $_YRES $_DEPTH
 fbset --all --geometry $_XRES $_YRES $_XRES $_YRES $_DEPTH -left 0 -right 0 -upper 0 -lower 0;
 sleep 1;
 
-cp /boot/etc/* /etc
+if [ -f /boot/dashboard ]; then
+  sudo chmod +x /boot/dashboard
+  sudo /boot/dashboard
+fi
 
 if [ -f /boot/xinitrc ]; then
-ln -fs /boot/xinitrc /home/REPLACE_USERNAME/.xinitrc;
-su - REPLACE_USERNAME -c "startx" &
+  ln -fs /boot/xinitrc /home/REPLACE_USERNAME/.xinitrc;
+  su - REPLACE_USERNAME -c "startx" &
 fi
 
 exit 0

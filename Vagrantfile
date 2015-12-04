@@ -15,13 +15,20 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = "ubuntu/trusty64"
   config.vm.provider "virtualbox" do |v|
-    v.name = "pibuilder"
+    v.name = "billb0ard"
     v.memory = 2048
     v.cpus = 4
   end
-  
+
   config.vm.provision "shell", inline: <<-SHELL
      apt-get update
      apt-get install -y build-essential git  debootstrap  qemu-user-static  kpartx whois dosfstools tmux wget ntp  binfmt-support qemu qemu-user-static lvm2 apt-cacher-ng unzip
+     cp -R /build/pkgs/ /pibuilder
+     echo "sudo su" >> /home/vagrant/.bashrc
+     echo "cd /pibuilder" >> /home/vagrant/.bashrc
+     echo "cd /pibuilder" >> /home/vagrant/.bash_profile
+     echo "sudo su" >> /home/vagrant/.bash_profile
+     cd /pibuilder
+     make image
   SHELL
 end

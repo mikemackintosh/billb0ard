@@ -1,5 +1,6 @@
 #!/bin/sh
-URL=$(cat /boot/dashboard.txt)
+source /boot/dashboard.txt
+
 while true; do
 
 	# Clean up previously running apps, gracefully at first then harshly

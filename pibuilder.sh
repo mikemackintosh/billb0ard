@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 while [[ $# -ge 1 ]]; do
   key="$1"
@@ -18,7 +18,7 @@ done
 # Default Packages
 PACKAGES=${PACKAGES-"module-init-tools locales console-common fbset wireless-tools xinit consolekit net-tools fonts-freefont-ttf ifplugd ifupdown hostname fontconfig-config fontconfig iputils-ping wpasupplicant curl binutils locales sudo openssh-server ntp usbmount patch less rsync sudo raspi-config matchbox chromium x11-xserver-utils xwit sqlite3 libnss3 vim"}
 
-IMAGESIZE=${IMAGESIZE-"996"} # in Megabytes
+IMAGESIZE=${IMAGESIZE-"1984"} # in Megabytes
 USERNAME=${BILLBOARD_USERNAME-"bill"}
 PASSWORD=${BILLBOARD_PASSWORD-"b0ard"}
 DNS_SERVER=${DNS_SERVER-"8.8.8.8"}
@@ -85,6 +85,7 @@ echo -e "\n\n\n"
 
 # Build out dirs
 mkdir -p $ROOTFS $BOOTFS
+ulimit -f 4000000
 
 # Check for permissions
 if [ ${EUID} -ne 0 ]; then
@@ -92,12 +93,6 @@ if [ ${EUID} -ne 0 ]; then
   exit 1
 fi
 
-# If verbose mode is disabled
-if [[ -z $VERBOSE ]]; then
-  # Catch errors and handle cleaning up the mess
-  trap cleanup 0 1 2 3 9 15
-  exec 2> ./errors.log
-fi
 
 
 # Log helper
@@ -114,6 +109,14 @@ error() {
 chroot_cmd() {
   #SHELL=/bin/sh SUDO_COMMAND=/bin/sh PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS "$@"
   SHELL=/bin/sh SUDO_COMMAND=/bin/sh PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS "$@"
+}
+
+chroot_apt-get() {
+  DEBIAN_FRONTEND=noninteractive SHELL=/bin/sh SUDO_COMMAND=/bin/sh PATH=/usr/bin:/usr/sbin:/usr/local/bin:/sbin:$PATH LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTFS \
+   apt-get -y \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" \
+    $@
 }
 
 # Handle cleanup
@@ -187,9 +190,9 @@ manage_firmware() {
 cleanup_bootstrap(){
   rm $ROOTFS/usr/bin/qemu-*
   #mount | grep rootfs | awk '{print $3}' | xarg umount --force
-  umount --force $ROOTFS/proc
-  umount --force $ROOTFS/sys
-  umount --force $ROOTFS/dev
+  umount -l --force $ROOTFS/proc
+  umount -l --force $ROOTFS/sys
+  umount -l --force $ROOTFS/dev
 }
 
 # Create the boot partition
@@ -240,10 +243,11 @@ create_img() {
   log " - Creating Blank Image:     ${OUTIMAGE}"
 
   dd if=/dev/zero of=$OUTIMAGE bs=1MB count=$IMAGESIZE
-  sudo losetup -f $OUTIMAGE
+  losetup -f $OUTIMAGE
+  LOOPDEVICE=$(losetup -a |grep $OUTIMAGE | cut -d':' -f1| cut -d'/' -f3)
   # Partition the device
   log " - Partitioning"
-  sudo fdisk /dev/loop0 << EOF
+  fdisk /dev/$LOOPDEVICE << EOF
 n
 p
 1
@@ -260,30 +264,29 @@ w
 EOF
 
   # Remove the loopback device
-  sudo losetup -d /dev/loop0
-  kpartx -va $OUTIMAGE | sed -E 's/.*(loop[0-9])p.*/1/g' | head -1
+  log "kpatrt"
+  kpartx -va /dev/$LOOPDEVICE
 
   # Format the devices
   log " - Formatting"
-  mkfs.vfat /dev/mapper/loop0p1
-  mkfs.ext4 /dev/mapper/loop0p2
-  if [[ $? -ne 0 ]]; then
-    mkfs.ext4 /dev/mapper/loop0p2
-  fi
+  mkfs.vfat /dev/mapper/${LOOPDEVICE}p1
+  mkfs.ext4 /dev/mapper/${LOOPDEVICE}p2
 
   log " - Installing RootFS"
-  sudo mkdir -p /mnt/rootfs
-  sudo mount /dev/mapper/loop0p2 /mnt/rootfs
-  sudo rsync -a $ROOTFS/ /mnt/rootfs
-  sudo cp -a firmware-master/hardfp/opt/vc /mnt/rootfs/opt/
-  sudo umount /mnt/rootfs
+  mkdir -p /mnt/rootfs
+  mount /dev/mapper/loop0p2 /mnt/rootfs
+  rsync -a $ROOTFS/ /mnt/rootfs
+  cp -a firmware-master/hardfp/opt/vc /mnt/rootfs/opt/
+  umount /mnt/rootfs
 
   log " - Installing BootFS"
-  sudo mkdir -p /mnt/bootfs
-  sudo mount /dev/mapper/loop0p1 /mnt/bootfs
-  sudo cp -R $BOOTFS/* /mnt/bootfs
-  sudo umount /mnt/bootfs
-  sudo kpartx -d $OUTIMAGE
+  mkdir -p /mnt/bootfs
+  mount /dev/mapper/${LOOPDEVICE}p1 /mnt/bootfs
+  cp -R $BOOTFS/* /mnt/bootfs
+  umount /mnt/bootfs
+  log "remove loopdev"
+  losetup -d /dev/$LOOPDEVICE
+  kpartx -d $OUTIMAGE
 
   log " - Copy complete image"
   cp *.img /build/pkgs/
@@ -303,8 +306,9 @@ PATH=/opt/vc/bin:/opt/vc/sbin:/sbin:$PATH
 ' > $ROOTFS/home/$BILLBOARD_USERNAME/.bashrc
 
   echo "console-common	console-data/keymap/policy	select	Select keymap from full list
-  console-common	console-data/keymap/full	select	us
-  " > $ROOTFS/debconf.set
+console-common	console-data/keymap/full	select	us
+keyboard-configuration console-setup/ask_detect=false keyboard-configuration/layoutcode=us
+" > $ROOTFS/debconf.set
 
   chroot_cmd chmod +x /debconf.set
   chroot_cmd debconf-set-selections /debconf.set
@@ -324,7 +328,7 @@ link_in_boot = yes
   # Set apt sources.list
   log " - Configuring apt packages"
   # Install wget if it's not installed
-#  chroot_cmd apt-get update
+#  chroot_apt-get update
 
   #chroot_cmd wget http://www.mirrorservice.org/sites/archive.raspbian.org/raspbian.public.key -O - | apt-key add -
   #echo "deb http://www.mirrorservice.org/sites/archive.raspbian.org/raspbian wheezy main" > $ROOTFS/etc/apt/sources.list
@@ -338,12 +342,12 @@ link_in_boot = yes
 
 
   #chroot_cmd add-apt-repository -y universe
-  chroot_cmd apt-get update
+  chroot_apt-get update
   cp skel/update.sh $ROOTFS/update.sh
   chmod +x $ROOTFS/update.sh
   chroot_cmd /update.sh
   rm $ROOTFS/update.sh
-  chroot_cmd apt-get install -y --force-yes $PACKAGES
+  chroot_apt-get install -y --force-yes $PACKAGES
 
 
   # Update raspberry pi

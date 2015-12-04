@@ -18,6 +18,10 @@ image:
 	#./make_img.sh -t -b raspi2 -d 15.10
 	./pibuilder.sh -v
 
+rebuild:
+	vagrant destroy -f
+	vagrant up --provider virtualbox
+
 vm:
 	vagrant up --provider virtualbox
 	vagrant ssh
