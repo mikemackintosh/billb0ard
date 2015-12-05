@@ -16,7 +16,7 @@ while [[ $# -ge 1 ]]; do
 done
 
 # Default Packages
-PACKAGES=${PACKAGES-"module-init-tools locales console-common fbset wireless-tools xinit consolekit net-tools fonts-freefont-ttf ifplugd ifupdown hostname fontconfig-config fontconfig iputils-ping wpasupplicant curl binutils locales sudo openssh-server ntp usbmount patch less rsync sudo raspi-config matchbox chromium x11-xserver-utils xwit sqlite3 libnss3 vim"}
+PACKAGES=${PACKAGES-"module-init-tools locales console-common fbset wireless-tools xinit consolekit net-tools fonts-freefont-ttf ifplugd ifupdown hostname fontconfig-config fontconfig iputils-ping wpasupplicant curl binutils iceweasel locales sudo openssh-server ntp usbmount patch less rsync sudo raspi-config matchbox chromium-browser x11-xserver-utils xwit sqlite3 libnss3 vim"}
 
 IMAGESIZE=${IMAGESIZE-"1984"} # in Megabytes
 USERNAME=${BILLBOARD_USERNAME-"bill"}
@@ -40,7 +40,7 @@ echo "Installing packages:                  ${PACKAGES}"
 echo -e "\n\n\n"
 
 # System defaults
-MIRROR="http://mirror.umd.edu/raspbian/raspbian"
+MIRROR="http://mirrordirector.raspbian.org/raspbian"
 #MIRROR="http://archive.raspbian.org/raspbian"
 CODENAME="wheezy"
 BOOTSIZE="64M"
@@ -334,10 +334,8 @@ link_in_boot = yes
   #echo "deb http://www.mirrorservice.org/sites/archive.raspbian.org/raspbian wheezy main" > $ROOTFS/etc/apt/sources.list
 
   #echo "deb http://archive.raspbian.org/raspbian wheezy main" > $ROOTFS/etc/apt/sources.list
-  echo "deb ${MIRROR} wheezy main contrib non-free" > $ROOTFS/etc/apt/sources.list
+  echo "deb ${MIRROR} wheezy main firmware contrib non-free" > $ROOTFS/etc/apt/sources.list
   chroot_cmd wget http://archive.raspbian.org/raspbian.public.key -O - | apt-key add -
-
-  echo "deb http://archive.raspberrypi.org/debian/ wheezy main" >> $ROOTFS/etc/apt/sources.list
   chroot_cmd wget http://archive.raspberrypi.org/debian/raspberrypi.gpg.key -O - | apt-key add -
 
 

@@ -33,5 +33,6 @@ while true; do
 	matchbox-window-manager -use_titlebar no -use_cursor no &
 
 	# Start the browser (See http://peter.sh/experiments/chromium-command-line-switches/)
-	chromium  --start-fullscreen --disable-async-dns --disable-cache --dns-prefetch-disable --force-app-mode --app=$URL
+	iceweasel $URL
+	#chromium  --start-fullscreen --disable-async-dns --disable-cache --dns-prefetch-disable --ignore-certificate-errors --ssl-version-min=tls1 --force-app-mode --app=$URL
 done;
